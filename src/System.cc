@@ -472,6 +472,67 @@ void System::SaveTrajectoryKITTI(const string &filename)
     cout << endl << "trajectory saved!" << endl;
 }
 
+void System::SaveMap(const string &filename){
+
+    cout << endl << "Saving map to " << filename << " ..." << endl;
+
+    vector<MapPoint*> vpMPs = mpMap->GetAllMapPoints();
+    // sort(vpMPs.begin(),vpMPs.end(),MapPoint::mnId);
+
+    // Transform all keyframes so that the first keyframe is at the origin.
+    // After a loop closure the first keyframe might not be at the origin.
+    // cv::Mat Two = vpKFs[0]->GetPoseInverse();
+
+    ofstream f;
+    f.open(filename.c_str());
+    f << fixed;
+    f << "Totally " << vpMPs.size() << " map points." << endl;
+
+    // Frame pose is stored relative to its reference keyframe (which is optimized by BA and pose graph).
+    // We need to get first the keyframe pose and then concatenate the relative transformation.
+    // Frames not localized (tracking failure) are not saved.
+
+    // For each frame we have a reference keyframe (lRit), the timestamp (lT) and a flag
+    // which is true when tracking failed (lbL).
+    // list<ORB_SLAM2::KeyFrame*>::iterator lRit = mpTracker->mlpReferences.begin();
+    // list<double>::iterator lT = mpTracker->mlFrameTimes.begin();
+    for(vector<MapPoint*>::iterator p=vpMPs.begin(); p != vpMPs.end(); p++){
+        MapPoint* mp = *p;
+        cv::Mat worldPos = mp->GetWorldPos();
+        f << setprecision(9) << worldPos.at<float>(0,0) << " " << 
+        worldPos.at<float>(1,0) << " " << worldPos.at<float>(2,0) << endl;
+    }
+
+
+    // for(list<cv::Mat>::iterator lit=mpTracker->mlRelativeFramePoses.begin(), lend=mpTracker->mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lT++)
+    // {
+    //     ORB_SLAM2::KeyFrame* pKF = *lRit;
+
+    //     cv::Mat Trw = cv::Mat::eye(4,4,CV_32F);
+
+    //     while(pKF->isBad())
+    //     {
+    //       //  cout << "bad parent" << endl;
+    //         Trw = Trw*pKF->mTcp;
+    //         pKF = pKF->GetParent();
+    //     }
+
+    //     Trw = Trw*pKF->GetPose()*Two;
+
+    //     cv::Mat Tcw = (*lit)*Trw;
+    //     cv::Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
+    //     cv::Mat twc = -Rwc*Tcw.rowRange(0,3).col(3);
+
+    //     f << setprecision(9) << Rwc.at<float>(0,0) << " " << Rwc.at<float>(0,1)  << " " << Rwc.at<float>(0,2) << " "  << twc.at<float>(0) << " " <<
+    //          Rwc.at<float>(1,0) << " " << Rwc.at<float>(1,1)  << " " << Rwc.at<float>(1,2) << " "  << twc.at<float>(1) << " " <<
+    //          Rwc.at<float>(2,0) << " " << Rwc.at<float>(2,1)  << " " << Rwc.at<float>(2,2) << " "  << twc.at<float>(2) << endl;
+    // }
+    f.close();
+    cout << endl << "map saved!" << endl;
+
+}
+
+
 int System::GetTrackingState()
 {
     unique_lock<mutex> lock(mMutexState);
